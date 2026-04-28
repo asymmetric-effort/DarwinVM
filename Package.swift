@@ -31,5 +31,13 @@ let package = Package(
                 .product(name: "Testing", package: "swift-testing"),
             ]
         ),
+        .testTarget(
+            name: "darwinvmTests",
+            dependencies: [
+                "darwinvm",
+                "DarwinVMCore",
+                .product(name: "Testing", package: "swift-testing"),
+            ]
+        ),
     ]
 )

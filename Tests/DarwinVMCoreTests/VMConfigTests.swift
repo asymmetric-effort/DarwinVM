@@ -84,4 +84,37 @@ struct VMConfigTests {
             _ = try NetworkMode.parse("bridged:")
         }
     }
+
+    @Test("Default values are set correctly")
+    func defaultValues() {
+        let config = VMConfig(name: "defaults", type: .linux)
+        #expect(config.cpuCount == 2)
+        #expect(config.memoryGB == 4)
+        #expect(config.diskSizeGB == 64)
+        #expect(config.network == .nat)
+        #expect(config.headless == false)
+        #expect(config.ipswPath == nil)
+        #expect(config.isoPath == nil)
+    }
+
+    @Test("createdAt is set to current date")
+    func createdAtIsSet() {
+        let before = Date()
+        let config = VMConfig(name: "timed", type: .linux)
+        let after = Date()
+        #expect(config.createdAt >= before)
+        #expect(config.createdAt <= after)
+    }
+
+    @Test("Memory size calculation for 1 GB")
+    func memorySize1GB() {
+        let config = VMConfig(name: "small", type: .linux, memoryGB: 1)
+        #expect(config.memorySize == 1_073_741_824)
+    }
+
+    @Test("Disk size calculation for 1 GB")
+    func diskSize1GB() {
+        let config = VMConfig(name: "small", type: .linux, diskSizeGB: 1)
+        #expect(config.diskSize == 1_073_741_824)
+    }
 }

@@ -1,13 +1,13 @@
 import Foundation
 import DarwinVMCore
 
-struct TableFormatter {
-    struct Column {
-        let header: String
-        let width: Int
+public struct TableFormatter {
+    public struct Column {
+        public let header: String
+        public let width: Int
     }
 
-    static func format(configs: [VMConfig]) -> String {
+    public static func format(configs: [VMConfig]) -> String {
         if configs.isEmpty {
             return "No virtual machines found."
         }

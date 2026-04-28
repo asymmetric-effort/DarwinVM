@@ -1,37 +1,50 @@
 import Foundation
 
-/// CRUD operations across all VMs in ~/.darwinvm/vms/
+/// CRUD operations across all VMs in a base directory.
 public struct VMStore: Sendable {
-    private static var baseURL: URL {
+    public let baseURL: URL
+
+    private static let defaultBaseURL: URL = {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".darwinvm/vms")
+    }()
+
+    /// Shared instance using the default ~/.darwinvm/vms/ base directory.
+    public static let shared = VMStore()
+
+    private let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }()
+
+    private let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }()
+
+    public init(baseURL: URL? = nil) {
+        self.baseURL = baseURL ?? VMStore.defaultBaseURL
     }
 
-    private static let encoder: JSONEncoder = {
-        let e = JSONEncoder()
-        e.outputFormatting = [.prettyPrinted, .sortedKeys]
-        e.dateEncodingStrategy = .iso8601
-        return e
-    }()
+    public func directory(for name: String) -> VMDirectory {
+        VMDirectory(baseURL: baseURL.appendingPathComponent(name))
+    }
 
-    private static let decoder: JSONDecoder = {
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
-        return d
-    }()
-
-    public static func ensureBaseDirectory() throws {
+    public func ensureBaseDirectory() throws {
         try FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
     }
 
-    public static func saveConfig(_ config: VMConfig) throws {
-        let dir = VMDirectory(name: config.name)
+    public func saveConfig(_ config: VMConfig) throws {
+        let dir = directory(for: config.name)
         let data = try encoder.encode(config)
         try data.write(to: dir.configURL, options: .atomic)
     }
 
-    public static func loadConfig(name: String) throws -> VMConfig {
-        let dir = VMDirectory(name: name)
+    public func loadConfig(name: String) throws -> VMConfig {
+        let dir = directory(for: name)
         guard FileManager.default.fileExists(atPath: dir.configURL.path) else {
             throw DarwinVMError.vmNotFound(name)
         }
@@ -39,24 +52,24 @@ public struct VMStore: Sendable {
         return try decoder.decode(VMConfig.self, from: data)
     }
 
-    public static func saveState(_ state: VMState, name: String) throws {
-        let dir = VMDirectory(name: name)
+    public func saveState(_ state: VMState, name: String) throws {
+        let dir = directory(for: name)
         let data = try encoder.encode(state)
         try data.write(to: dir.stateURL, options: .atomic)
     }
 
-    public static func loadState(name: String) -> VMState? {
-        let dir = VMDirectory(name: name)
+    public func loadState(name: String) -> VMState? {
+        let dir = directory(for: name)
         guard let data = try? Data(contentsOf: dir.stateURL) else { return nil }
         return try? decoder.decode(VMState.self, from: data)
     }
 
-    public static func removeState(name: String) {
-        let dir = VMDirectory(name: name)
+    public func removeState(name: String) {
+        let dir = directory(for: name)
         try? FileManager.default.removeItem(at: dir.stateURL)
     }
 
-    public static func listAll() throws -> [VMConfig] {
+    public func listAll() throws -> [VMConfig] {
         try ensureBaseDirectory()
         let contents = try FileManager.default.contentsOfDirectory(
             at: baseURL, includingPropertiesForKeys: nil)
@@ -75,15 +88,53 @@ public struct VMStore: Sendable {
         return configs.sorted { $0.name < $1.name }
     }
 
-    public static func exists(name: String) -> Bool {
-        VMDirectory(name: name).exists
+    public func exists(name: String) -> Bool {
+        directory(for: name).exists
     }
 
-    public static func delete(name: String) throws {
-        let dir = VMDirectory(name: name)
+    public func delete(name: String) throws {
+        let dir = directory(for: name)
         guard dir.exists else {
             throw DarwinVMError.vmNotFound(name)
         }
         try dir.remove()
+    }
+
+    // MARK: - Static convenience methods (delegate to shared instance)
+
+    public static func ensureBaseDirectory() throws {
+        try shared.ensureBaseDirectory()
+    }
+
+    public static func saveConfig(_ config: VMConfig) throws {
+        try shared.saveConfig(config)
+    }
+
+    public static func loadConfig(name: String) throws -> VMConfig {
+        try shared.loadConfig(name: name)
+    }
+
+    public static func saveState(_ state: VMState, name: String) throws {
+        try shared.saveState(state, name: name)
+    }
+
+    public static func loadState(name: String) -> VMState? {
+        shared.loadState(name: name)
+    }
+
+    public static func removeState(name: String) {
+        shared.removeState(name: name)
+    }
+
+    public static func listAll() throws -> [VMConfig] {
+        try shared.listAll()
+    }
+
+    public static func exists(name: String) -> Bool {
+        shared.exists(name: name)
+    }
+
+    public static func delete(name: String) throws {
+        try shared.delete(name: name)
     }
 }

@@ -1,0 +1,34 @@
+excluded:
+  - .build
+  - .swiftpm
+  - DerivedData
+
+disabled_rules:
+  - trailing_comma
+  - opening_brace
+  - identifier_name
+  - type_name
+  - nesting
+  - force_cast
+  - cyclomatic_complexity
+  - function_body_length
+  - file_length
+  - type_body_length
+  - large_tuple
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - explicit_init
+  - redundant_nil_coalescing
+  - first_where
+  - sorted_first_last
+  - toggle_bool
+
+line_length:
+  warning: 150
+  error: 200
+
+function_parameter_count:
+  warning: 8
+  error: 10

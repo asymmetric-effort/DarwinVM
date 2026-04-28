@@ -9,7 +9,7 @@ public struct PIDFile: Sendable {
 
     public func write() throws {
         let pid = ProcessInfo.processInfo.processIdentifier
-        let data = "\(pid)".data(using: .utf8)!
+        let data = Data("\(pid)".utf8)
         try data.write(to: url, options: .atomic)
     }
 
